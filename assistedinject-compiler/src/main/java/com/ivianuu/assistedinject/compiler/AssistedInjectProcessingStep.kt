@@ -16,20 +16,20 @@
 
 package com.ivianuu.assistedinject.compiler
 
+import com.google.auto.common.AnnotationMirrors
 import com.google.auto.common.BasicAnnotationProcessor
 import com.google.auto.common.MoreElements
 import com.google.common.collect.SetMultimap
 import com.ivianuu.assistedinject.Assisted
 import com.ivianuu.assistedinject.AssistedInject
 import com.squareup.javapoet.ClassName
-import javax.annotation.processing.Filer
 import javax.annotation.processing.ProcessingEnvironment
+import javax.inject.Qualifier
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
-import javax.tools.Diagnostic
 
 /**
  * @author Manuel Wrage (IVIanuu)
@@ -77,7 +77,8 @@ class AssistedInjectProcessingStep(
                     param,
                     ClassName.get(param.asType()),
                     name,
-                    MoreElements.isAnnotationPresent(field, Assisted::class.java)
+                    MoreElements.isAnnotationPresent(field, Assisted::class.java),
+                    AnnotationMirrors.getAnnotatedAnnotations(param, Qualifier::class.java).toList()
                 )
             }
             .toSet()

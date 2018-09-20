@@ -18,7 +18,7 @@ package com.ivianuu.assistedinject.compiler
 
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
-import javax.lang.model.element.Element
+import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.VariableElement
 
@@ -38,5 +38,6 @@ data class AssistedInjectParam(
     val element: VariableElement,
     val type: TypeName,
     val name: String,
-    val assisted: Boolean
+    val assisted: Boolean,
+    val qualifiers: List<AnnotationMirror>
 )

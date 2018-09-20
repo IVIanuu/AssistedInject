@@ -17,24 +17,21 @@
 package com.ivianuu.assistedinject.sample
 
 import android.content.Context
-import android.util.Log
-import androidx.lifecycle.ViewModel
-import com.ivianuu.assistedinject.Assisted
-import com.ivianuu.assistedinject.AssistedInject
+import dagger.Module
+import dagger.Provides
+import javax.inject.Qualifier
+
+@Qualifier
+annotation class AppContext
 
 /**
  * @author Manuel Wrage (IVIanuu)
  */
-class MainViewModel @AssistedInject constructor(
-    @AppContext private val context: Context,
-    @Assisted private val id: String,
-    private val myDep1: MyDep1,
-    private val myDep2: MyDep2,
-    @Assisted private val useSomething: Boolean
-) : ViewModel() {
+@Module
+object AppModule {
 
-    init {
-        Log.d("MainViewModel", "id = $id, use something $useSomething")
-    }
-
+    @JvmStatic
+    @AppContext
+    @Provides
+    fun provideContext(app: App): Context = app
 }
