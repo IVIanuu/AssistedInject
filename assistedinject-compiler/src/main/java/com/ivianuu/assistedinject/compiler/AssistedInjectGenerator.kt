@@ -67,6 +67,7 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
                            ParameterizedTypeName.get(ClassName.get(Provider::class.java), it.type),
                            it.name
                        )
+                           .addAnnotation(NotNull::class.java)
                            .addAnnotations(it.qualifiers.map { AnnotationSpec.get(it) })
                            .build()
                    }
