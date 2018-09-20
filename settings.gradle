@@ -1,0 +1,1 @@
+include ':sample', ':assistedinject', ':assistedinject-annotations', ':assistedinject-compiler'
