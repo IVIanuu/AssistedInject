@@ -14,7 +14,7 @@ object Versions {
     const val autoService = "1.0-rc4"
     const val dagger = "2.16"
     const val javaPoet = "1.11.1"
-    const val kotlin = "1.3-M2"
+    const val kotlin = "1.3.0-rc-57"
     const val mavenGradle = "2.1"
 }
 
