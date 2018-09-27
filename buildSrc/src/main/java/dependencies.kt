@@ -6,10 +6,11 @@ object Versions {
     const val minSdk = 14
     const val targetSdk = 28
     const val versionCode = 1
-    const val versionName = "1.0"
+    const val versionName = "SNAPSHOT"
+    const val groupId = "com.ivianuu.assistedinject"
 
-    const val androidGradlePlugin = "3.3.0-alpha10"
-    const val androidx = "1.0.0-rc02"
+    const val androidGradlePlugin = "3.2.0"
+    const val androidx = "1.0.0"
     const val autoCommon = "0.10"
     const val autoService = "1.0-rc4"
     const val dagger = "2.16"
