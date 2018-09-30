@@ -19,8 +19,7 @@ apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.github.dcendents.android-maven'
 
-group=Versions.groupId
-version=Versions.versionName
+group='com.github.ivianuu'
 
 sourceCompatibility = "1.7"
 targetCompatibility = "1.7"
@@ -38,12 +37,4 @@ dependencies {
     implementation Deps.javaPoet
 
     implementation Deps.kotlinStdLib
-}
-
-install {
-    repositories.mavenInstaller {
-        pom.groupId = Versions.groupId
-        pom.version = Versions.versionName
-        pom.artifactId = project.name
-    }
 }
