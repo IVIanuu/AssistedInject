@@ -18,14 +18,12 @@ buildscript {
     repositories {
         google()
         jcenter()
-        mavenCentral()
-        maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
+        maven("https://dl.bintray.com/kotlin/kotlin-eap")
     }
-
     dependencies {
-        classpath Deps.androidGradlePlugin
-        classpath Deps.kotlinGradlePlugin
-        classpath Deps.mavenGradlePlugin
+        classpath(Deps.androidGradlePlugin)
+        classpath(Deps.kotlinGradlePlugin)
+        classpath(Deps.mavenGradlePlugin)
     }
 }
 
@@ -33,11 +31,11 @@ allprojects {
     repositories {
         google()
         jcenter()
-        mavenCentral()
-        maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
+        maven("https://dl.bintray.com/kotlin/kotlin-eap")
+        maven("https://jitpack.io")
     }
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+task("clean", Delete::class) {
+    delete(rootProject.buildDir)
 }

@@ -1,13 +1,17 @@
 @file:Suppress("ClassName", "unused")
 
-object Versions {
-    // android
+object Build {
+    const val applicationId = "com.ivianuu.assistedinject.sample"
+    const val buildToolsVersion = "28.0.2"
+
     const val compileSdk = 28
     const val minSdk = 14
     const val targetSdk = 28
     const val versionCode = 1
     const val versionName = "0.0.1"
+}
 
+object Versions {
     const val androidGradlePlugin = "3.2.0"
     const val androidx = "1.0.0"
     const val autoCommon = "0.10"
