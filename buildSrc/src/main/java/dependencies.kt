@@ -19,6 +19,7 @@ object Versions {
     const val dagger = "2.16"
     const val javaPoet = "1.11.1"
     const val kotlin = "1.3.10"
+    const val kotlinMetadata = "1.4.0"
     const val mavenGradle = "2.1"
 }
 
@@ -41,6 +42,8 @@ object Deps {
 
     const val kotlinGradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:${Versions.kotlin}"
     const val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${Versions.kotlin}"
+    const val kotlinMetadata =
+        "me.eugeniomarletti.kotlin.metadata:kotlin-metadata:${Versions.kotlinMetadata}"
 
     const val mavenGradlePlugin = "com.github.dcendents:android-maven-gradle-plugin:${Versions.mavenGradle}"
 }

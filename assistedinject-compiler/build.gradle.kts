@@ -42,6 +42,7 @@ dependencies {
     implementation(Deps.javaPoet)
 
     implementation(Deps.kotlinStdLib)
+    implementation(Deps.kotlinMetadata)
 }
 
 val sourcesJar = task("sourcesJar", Jar::class) {

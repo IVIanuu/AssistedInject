@@ -8,6 +8,8 @@ import com.google.common.collect.SetMultimap
 import com.ivianuu.assistedinject.AssistedInject
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
+import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
+import me.eugeniomarletti.kotlin.metadata.kotlinMetadata
 import javax.annotation.processing.ProcessingEnvironment
 import javax.inject.Qualifier
 import javax.lang.model.element.Element
@@ -53,7 +55,7 @@ class AssistedInjectProcessingStep(
             .filter { isAnnotationPresent(it, AssistedInject.Factory::class.java) }
 
         val factory = when {
-            factories.size == 1 -> factories.first()
+            factories.size == 1 -> factories.first() as TypeElement
             factories.size > 1 -> {
                 processingEnv.messager.printMessage(
                     Diagnostic.Kind.ERROR,
@@ -71,10 +73,9 @@ class AssistedInjectProcessingStep(
         }
 
         val factoryTypeMirror = factory.asType()
-        val factoryType = processingEnv.elementUtils.getTypeElement(factoryTypeMirror.toString())
 
         val factoryMethods = getLocalAndInheritedMethods(
-            factoryType, processingEnv.typeUtils, processingEnv.elementUtils
+            factory, processingEnv.typeUtils, processingEnv.elementUtils
         ).filterNot { it.isDefault }
 
         if (factoryMethods.isEmpty()) {
@@ -93,19 +94,36 @@ class AssistedInjectProcessingStep(
 
         val factoryMethod = factoryMethods.first()
 
+        val ktMeta = factoryMethod.enclosingElement.kotlinMetadata
+
+        // find the kt parameter names
+        // because for some reason interface parameter names
+        // will be renamed to var1, var2.. when compiled and used in a different module
+        val ktFactoryMethodParameterNames = if (ktMeta is KotlinClassMetadata) {
+            ktMeta.data.classProto.getFunction(0)
+                .valueParameterList
+                .map { ktMeta.data.nameResolver.getString(it.name) }
+        } else {
+            null
+        }
+
         val factoryExecutable = processingEnv.typeUtils.asMemberOf(
-            factoryType.asType() as DeclaredType,
+            factory.asType() as DeclaredType,
             factoryMethod
         ) as ExecutableType
 
         val factoryParams = factoryMethod.parameters
-            .zip(factoryExecutable.parameterTypes) { element, mirror ->
-                element.simpleName.toString() to mirror
+            .mapIndexed { i, param ->
+                Triple(
+                    param,
+                    factoryExecutable.parameterTypes[i],
+                    ktFactoryMethodParameterNames?.get(i)
+                )
             }
-            .map {
+            .map { (element, type, ktName) ->
                 AssistedInjectDescriptor.Param(
-                    TypeName.get(it.second),
-                    it.first,
+                    TypeName.get(type),
+                    ktName ?: element.simpleName.toString(),
                     true,
                     emptyList()
                 )
