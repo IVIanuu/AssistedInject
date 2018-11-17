@@ -1,49 +1,33 @@
-/*
- * Copyright 2018 Manuel Wrage
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.ivianuu.assistedinject.compiler
 
-import com.google.auto.common.AnnotationMirrors
+import com.google.auto.common.AnnotationMirrors.getAnnotatedAnnotations
 import com.google.auto.common.BasicAnnotationProcessor
-import com.google.auto.common.MoreElements
+import com.google.auto.common.MoreElements.getLocalAndInheritedMethods
+import com.google.auto.common.MoreElements.isAnnotationPresent
 import com.google.common.collect.SetMultimap
-import com.ivianuu.assistedinject.Assisted
 import com.ivianuu.assistedinject.AssistedInject
 import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.TypeName
 import javax.annotation.processing.ProcessingEnvironment
 import javax.inject.Qualifier
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.lang.model.element.VariableElement
+import javax.lang.model.type.DeclaredType
+import javax.lang.model.type.ExecutableType
+import javax.tools.Diagnostic
 
-/**
- * @author Manuel Wrage (IVIanuu)
- */
 class AssistedInjectProcessingStep(
     private val processingEnv: ProcessingEnvironment
 ) : BasicAnnotationProcessor.ProcessingStep {
 
+    override fun annotations() = mutableSetOf(AssistedInject::class.java)
+
     override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): MutableSet<out Element> {
         elementsByAnnotation[AssistedInject::class.java]
-            .asSequence()
             .filterIsInstance<ExecutableElement>()
-            .map { createDescriptor(it) }
-            .filterNotNull()
+            .mapNotNull { createDescriptor(it) }
             .map { AssistedInjectGenerator(it) }
             .map { it.generate() }
             .forEach { it.writeTo(processingEnv.filer) }
@@ -51,43 +35,97 @@ class AssistedInjectProcessingStep(
         return mutableSetOf()
     }
 
-    override fun annotations(): MutableSet<out Class<out Annotation>> =
-            mutableSetOf(AssistedInject::class.java)
-
     private fun createDescriptor(element: ExecutableElement): AssistedInjectDescriptor? {
-        val type = element.enclosingElement as TypeElement
+        val type = (element.enclosingElement as TypeElement)
 
         val params = element.parameters
-            .asSequence()
-            .map { param ->
-                val name = param.simpleName.toString()
-
-                // find the field for the constructor element
-                // to check if a @Assisted annotation is present
-                val field = type.enclosedElements
-                    .asSequence()
-                    .filterIsInstance<VariableElement>()
-                    .firstOrNull { it.simpleName.toString() == name }
-
-                if (field == null) {
-                    // todo notify error
-                }
-
-                AssistedInjectParam(
-                    param,
-                    ClassName.get(param.asType()),
-                    name,
-                    MoreElements.isAnnotationPresent(field, Assisted::class.java),
-                    AnnotationMirrors.getAnnotatedAnnotations(param, Qualifier::class.java).toList()
+            .map {
+                AssistedInjectDescriptor.Param(
+                    TypeName.get(it.asType()),
+                    it.simpleName.toString(),
+                    it.isAssisted(),
+                    getAnnotatedAnnotations(it, Qualifier::class.java).toList()
                 )
             }
             .toSet()
 
-        val factoryName = ClassName.bestGuess(
-            type.asType().toString() + "Factory"
-        )
+        val factories = type.enclosedElements
+            .filter { isAnnotationPresent(it, AssistedInject.Factory::class.java) }
 
-        return AssistedInjectDescriptor(element, factoryName.packageName(),
-            ClassName.get(type), factoryName, params, type.modifiers.contains(Modifier.PUBLIC))
+        val factory = when {
+            factories.size == 1 -> factories.first()
+            factories.size > 1 -> {
+                processingEnv.messager.printMessage(
+                    Diagnostic.Kind.ERROR,
+                    "Only one @AssistedInject.Factory interface is allowed per class"
+                )
+                return null
+            }
+            else -> {
+                processingEnv.messager.printMessage(
+                    Diagnostic.Kind.ERROR,
+                    "@AssistedInject annotated classes must also have a nested @AssistedInject.Factory annotated factory interface"
+                )
+                return null
+            }
+        }
+
+        val factoryTypeMirror = factory.asType()
+        val factoryType = processingEnv.elementUtils.getTypeElement(factoryTypeMirror.toString())
+
+        val factoryMethods = getLocalAndInheritedMethods(
+            factoryType, processingEnv.typeUtils, processingEnv.elementUtils
+        ).filterNot { it.isDefault }
+
+        if (factoryMethods.isEmpty()) {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.ERROR, "factory interface has no methods", factory
+            )
+            return null
+        } else if (factoryMethods.size > 1) {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.ERROR, "factory interface has multiple methods", factory
+            )
+            return null
+        }
+
+        val assistedParams = params.filter { it.assisted }
+
+        val factoryMethod = factoryMethods.first()
+
+        val factoryExecutable = processingEnv.typeUtils.asMemberOf(
+            factoryType.asType() as DeclaredType,
+            factoryMethod
+        ) as ExecutableType
+        val factoryParams = factoryMethod.parameters
+            .zip(factoryExecutable.parameterTypes) { element, mirror ->
+                element.simpleName.toString() to mirror
+            }
+
+        val factoryMethodValid = assistedParams
+            .mapIndexed { i, p -> p to factoryParams[i] }
+            .all { (assistedParam, param) ->
+                assistedParam.type == TypeName.get(param.second)
+                        && assistedParam.name == param.first
+            }
+
+        if (!factoryMethodValid) {
+            processingEnv.messager.printMessage(
+                Diagnostic.Kind.ERROR,
+                "factory method ${factoryMethod.simpleName} does not match the @AssistedInject type",
+                element
+            )
+            return null
+        }
+
+        return AssistedInjectDescriptor(
+            ClassName.get(type).packageName(),
+            ClassName.get(type),
+            ClassName.bestGuess("${type.simpleName}_AssistedFactory"),
+            ClassName.bestGuess(factoryTypeMirror.toString()),
+            factoryMethod.simpleName.toString(),
+            params,
+            type.modifiers.contains(Modifier.PUBLIC)
+        )
     }
 }

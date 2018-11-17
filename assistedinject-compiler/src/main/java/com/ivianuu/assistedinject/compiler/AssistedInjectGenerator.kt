@@ -1,19 +1,3 @@
-/*
- * Copyright 2018 Manuel Wrage
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.ivianuu.assistedinject.compiler
 
 import com.squareup.javapoet.AnnotationSpec
@@ -30,9 +14,6 @@ import javax.inject.Inject
 import javax.inject.Provider
 import javax.lang.model.element.Modifier
 
-/**
- * @author Manuel Wrage (IVIanuu)
- */
 class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) {
 
     fun generate(): JavaFile {
@@ -41,6 +22,7 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
             .addFields(fields())
             .addMethod(constructor())
             .addMethod(create())
+            .addSuperinterface(descriptor.superFactory)
 
         if (descriptor.isPublic) {
             type.addModifiers(Modifier.PUBLIC)
@@ -60,17 +42,17 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
             .apply { if (descriptor.isPublic) addModifiers(Modifier.PUBLIC) }
             .addAnnotation(Inject::class.java)
             .addParameters(
-               params
-                   .asSequence()
-                   .map {
-                       ParameterSpec.builder(
-                           ParameterizedTypeName.get(ClassName.get(Provider::class.java), it.type),
-                           it.name
-                       )
-                           .addAnnotation(NotNull::class.java)
-                           .addAnnotations(it.qualifiers.map { AnnotationSpec.get(it) })
-                           .build()
-                   }
+                params
+                    .asSequence()
+                    .map {
+                        ParameterSpec.builder(
+                            ParameterizedTypeName.get(ClassName.get(Provider::class.java), it.type),
+                            it.name
+                        )
+                            .addAnnotation(NotNull::class.java)
+                            .addAnnotations(it.qualifiers.map { AnnotationSpec.get(it) })
+                            .build()
+                    }
                     .toList()
             )
             .addCode(
@@ -86,14 +68,16 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
     }
 
     private fun fields(): Set<FieldSpec> {
-       return descriptor.params
+        return descriptor.params
             .asSequence()
             .filterNot { it.assisted }
             .map {
                 FieldSpec.builder(
                     ParameterizedTypeName.get(
                         ClassName.get(Provider::class.java),
-                        it.type), it.name)
+                        it.type
+                    ), it.name
+                )
                     .addModifiers(Modifier.PRIVATE, Modifier.FINAL)
                     .build()
             }
@@ -108,18 +92,18 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
             .joinToString(", ")
         })"
 
-        return MethodSpec.methodBuilder("create")
+        return MethodSpec.methodBuilder(descriptor.functionName)
             .addAnnotation(NotNull::class.java)
             .apply { if (descriptor.isPublic) addModifiers(Modifier.PUBLIC) }
-            .returns(descriptor.type)
+            .returns(descriptor.target)
             .addParameters(
                 descriptor.params
-                .asSequence()
+                    .asSequence()
                     .filter { it.assisted }
                     .map { ParameterSpec.builder(it.type, it.name).build() }
                     .toSet()
             )
-            .addStatement(statement, descriptor.type)
+            .addStatement(statement, descriptor.target)
             .build()
     }
 }

@@ -17,6 +17,7 @@
 package com.ivianuu.assistedinject.sample
 
 import android.content.Context
+import com.ivianuu.assistedinject.AssistedModule
 import dagger.Module
 import dagger.Provides
 import javax.inject.Qualifier
@@ -35,3 +36,6 @@ object AppModule {
     @Provides
     fun provideContext(app: App): Context = app
 }
+
+@AssistedModule
+class AssistedModule

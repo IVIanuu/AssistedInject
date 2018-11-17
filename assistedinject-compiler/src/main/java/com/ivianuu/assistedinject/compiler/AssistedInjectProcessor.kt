@@ -26,7 +26,14 @@ import javax.annotation.processing.Processor
 @AutoService(Processor::class)
 class AssistedInjectProcessor : BasicAnnotationProcessor() {
 
+    private val assistedModuleStep by lazy {
+        AssistedModuleProcessingStep(processingEnv)
+    }
+
     override fun initSteps() =
-        mutableSetOf(AssistedInjectProcessingStep(processingEnv))
+        mutableSetOf(
+            AssistedInjectProcessingStep(processingEnv),
+            assistedModuleStep
+        )
 
 }

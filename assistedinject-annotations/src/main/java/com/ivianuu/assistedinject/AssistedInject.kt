@@ -20,4 +20,8 @@ package com.ivianuu.assistedinject
  * @author Manuel Wrage (IVIanuu)
  */
 @Target(AnnotationTarget.CONSTRUCTOR)
-annotation class AssistedInject
+annotation class AssistedInject {
+
+    @Target(AnnotationTarget.CLASS)
+    annotation class Factory
+}

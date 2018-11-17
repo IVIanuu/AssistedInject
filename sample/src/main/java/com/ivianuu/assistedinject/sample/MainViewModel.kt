@@ -17,24 +17,56 @@
 package com.ivianuu.assistedinject.sample
 
 import android.content.Context
-import android.util.Log
+import android.os.Bundle
+import android.os.Parcelable
 import androidx.lifecycle.ViewModel
 import com.ivianuu.assistedinject.Assisted
 import com.ivianuu.assistedinject.AssistedInject
+import dagger.Binds
+import dagger.MapKey
+import dagger.Module
+import dagger.multibindings.IntoMap
+import kotlin.reflect.KClass
 
-/**
- * @author Manuel Wrage (IVIanuu)
- */
+@MapKey
+annotation class ViewModelKey(val value: KClass<out ViewModel>)
+
+@Module
+abstract class ViewModelFactoryModule {
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(MainViewModel::class)
+    abstract fun bindMainViewModelFactory(factory: MainViewModel.Factory): KeyViewModelFactory<*>
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(HomeViewModel::class)
+    abstract fun bindHomeViewModelFactory(factory: HomeViewModel.Factory): KeyViewModelFactory<*>
+}
+
+interface KeyViewModelFactory<K : Parcelable> {
+    fun create(key: K): ViewModel
+}
+
 class MainViewModel @AssistedInject constructor(
+    @Assisted private val key: Bundle,
     @AppContext private val context: Context,
-    @Assisted private val id: String,
     private val myDep1: MyDep1,
-    private val myDep2: MyDep2,
-    @Assisted private val useSomething: Boolean
+    private val myDep2: MyDep2
 ) : ViewModel() {
 
-    init {
-        Log.d("MainViewModel", "id = $id, use something $useSomething")
-    }
+    @AssistedInject.Factory
+    interface Factory : KeyViewModelFactory<Bundle>
+}
 
+class HomeViewModel @AssistedInject constructor(
+    @Assisted private val key: Bundle,
+    @AppContext private val context: Context,
+    private val myDep1: MyDep1,
+    private val myDep2: MyDep2
+) : ViewModel() {
+
+    @AssistedInject.Factory
+    interface Factory : KeyViewModelFactory<Bundle>
 }

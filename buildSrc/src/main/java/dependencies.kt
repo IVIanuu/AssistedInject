@@ -2,7 +2,7 @@
 
 object Build {
     const val applicationId = "com.ivianuu.assistedinject.sample"
-    const val buildToolsVersion = "28.0.2"
+    const val buildToolsVersion = "28.0.3"
 
     const val compileSdk = 28
     const val minSdk = 14
@@ -12,13 +12,13 @@ object Build {
 }
 
 object Versions {
-    const val androidGradlePlugin = "3.2.0"
+    const val androidGradlePlugin = "3.2.1"
     const val androidx = "1.0.0"
     const val autoCommon = "0.10"
     const val autoService = "1.0-rc4"
     const val dagger = "2.16"
     const val javaPoet = "1.11.1"
-    const val kotlin = "1.3.0-rc-57"
+    const val kotlin = "1.3.10"
     const val mavenGradle = "2.1"
 }
 
