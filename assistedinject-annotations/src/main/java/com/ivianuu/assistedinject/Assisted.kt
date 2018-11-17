@@ -19,5 +19,5 @@ package com.ivianuu.assistedinject
 /**
  * @author Manuel Wrage (IVIanuu)
  */
-@Target(AnnotationTarget.FIELD)
+@Target(AnnotationTarget.FIELD, AnnotationTarget.VALUE_PARAMETER)
 annotation class Assisted

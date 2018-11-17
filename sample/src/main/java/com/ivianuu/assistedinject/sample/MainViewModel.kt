@@ -46,13 +46,14 @@ abstract class ViewModelFactoryModule {
 }
 
 interface KeyViewModelFactory<K : Parcelable> {
-    fun create(key: K): ViewModel
+    fun create(key: K, context: Context): ViewModel
 }
 
 class MainViewModel @AssistedInject constructor(
     @Assisted private val key: Bundle,
-    @AppContext private val context: Context,
     private val myDep1: MyDep1,
+    @Assisted context: Context,
+    @AppContext appCo: Context,
     private val myDep2: MyDep2
 ) : ViewModel() {
 
@@ -62,9 +63,9 @@ class MainViewModel @AssistedInject constructor(
 
 class HomeViewModel @AssistedInject constructor(
     @Assisted private val key: Bundle,
-    @AppContext private val context: Context,
     private val myDep1: MyDep1,
-    private val myDep2: MyDep2
+    private val myDep2: MyDep2,
+    @Assisted private val context: Context
 ) : ViewModel() {
 
     @AssistedInject.Factory

@@ -97,22 +97,26 @@ class AssistedInjectProcessingStep(
             factoryType.asType() as DeclaredType,
             factoryMethod
         ) as ExecutableType
+
         val factoryParams = factoryMethod.parameters
             .zip(factoryExecutable.parameterTypes) { element, mirror ->
                 element.simpleName.toString() to mirror
             }
-
-        val factoryMethodValid = assistedParams
-            .mapIndexed { i, p -> p to factoryParams[i] }
-            .all { (assistedParam, param) ->
-                assistedParam.type == TypeName.get(param.second)
-                        && assistedParam.name == param.first
+            .map {
+                AssistedInjectDescriptor.Param(
+                    TypeName.get(it.second),
+                    it.first,
+                    true,
+                    emptyList()
+                )
             }
 
-        if (!factoryMethodValid) {
+        if (assistedParams != factoryParams) {
+            val missingParams = assistedParams.filterNot { factoryParams.contains(it) }
+                .map { it.name to it.type.toString() }
             processingEnv.messager.printMessage(
                 Diagnostic.Kind.ERROR,
-                "factory method ${factoryMethod.simpleName} does not match the @AssistedInject type",
+                "factory method ${factoryMethod.simpleName} does not match the @AssistedInject type: missing params $missingParams",
                 element
             )
             return null

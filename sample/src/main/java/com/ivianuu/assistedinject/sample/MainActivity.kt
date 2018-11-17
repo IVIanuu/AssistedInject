@@ -1,5 +1,6 @@
 package com.ivianuu.assistedinject.sample
 
+import android.content.Context
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
@@ -10,12 +11,13 @@ import javax.inject.Inject
 import javax.inject.Provider
 
 class KeyViewModelProviderFactory @Inject constructor(
+    @AppContext private val context: Context,
     private val factories: Map<Class<out ViewModel>, @JvmSuppressWildcards Provider<@JvmSuppressWildcards KeyViewModelFactory<*>>>
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         val factory = factories[modelClass]?.get() as? KeyViewModelFactory<Parcelable>
             ?: throw IllegalArgumentException("no factory found for $modelClass")
-        return factory.create(Bundle()) as T
+        return factory.create(Bundle(), context) as T
     }
 }
 
