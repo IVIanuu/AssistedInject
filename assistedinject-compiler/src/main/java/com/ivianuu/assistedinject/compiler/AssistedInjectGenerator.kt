@@ -34,7 +34,7 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
 
     private fun constructor(): MethodSpec {
         val params =
-            descriptor.params.asSequence()
+            descriptor.targetParams.asSequence()
                 .filterNot { it.assisted }
                 .toSet()
 
@@ -68,7 +68,7 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
     }
 
     private fun fields(): Set<FieldSpec> {
-        return descriptor.params
+        return descriptor.targetParams
             .asSequence()
             .filterNot { it.assisted }
             .map {
@@ -86,20 +86,19 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
 
     private fun create(): MethodSpec {
         val statement = "return new \$T(${
-        descriptor.params
+        descriptor.targetParams
             .asSequence()
             .map { if (it.assisted) it.name else "${it.name}.get()" }
             .joinToString(", ")
         })"
 
-        return MethodSpec.methodBuilder(descriptor.functionName)
+        return MethodSpec.methodBuilder(descriptor.factoryMethod)
             .addAnnotation(NotNull::class.java)
             .apply { if (descriptor.isPublic) addModifiers(Modifier.PUBLIC) }
             .returns(descriptor.target)
             .addParameters(
-                descriptor.params
+                descriptor.factoryParams
                     .asSequence()
-                    .filter { it.assisted }
                     .map { ParameterSpec.builder(it.type, it.name).build() }
                     .toSet()
             )

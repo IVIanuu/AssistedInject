@@ -129,7 +129,7 @@ class AssistedInjectProcessingStep(
                 )
             }
 
-        if (assistedParams != factoryParams) {
+        if (assistedParams.sortedBy { it.name } != factoryParams.sortedBy { it.name }) {
             val missingParams = assistedParams.filterNot { factoryParams.contains(it) }
                 .map { it.name to it.type.toString() }
             processingEnv.messager.printMessage(
@@ -143,10 +143,11 @@ class AssistedInjectProcessingStep(
         return AssistedInjectDescriptor(
             ClassName.get(type).packageName(),
             ClassName.get(type),
+            params,
             ClassName.bestGuess("${type.simpleName}_AssistedFactory"),
             ClassName.bestGuess(factoryTypeMirror.toString()),
             factoryMethod.simpleName.toString(),
-            params,
+            factoryParams.toSet(),
             type.modifiers.contains(Modifier.PUBLIC)
         )
     }

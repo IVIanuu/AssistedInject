@@ -50,9 +50,9 @@ interface KeyViewModelFactory<K : Parcelable> {
 }
 
 class MainViewModel @AssistedInject constructor(
-    @Assisted private val key: Bundle,
     private val myDep1: MyDep1,
     @Assisted context: Context,
+    @Assisted private val key: Bundle,
     @AppContext appCo: Context,
     private val myDep2: MyDep2
 ) : ViewModel() {

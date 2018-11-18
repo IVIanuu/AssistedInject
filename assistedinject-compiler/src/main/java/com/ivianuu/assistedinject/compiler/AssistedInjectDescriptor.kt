@@ -7,10 +7,11 @@ import javax.lang.model.element.AnnotationMirror
 data class AssistedInjectDescriptor(
     val packageName: String,
     val target: ClassName,
+    val targetParams: Set<Param>,
     val factoryName: ClassName,
     val superFactory: ClassName,
-    val functionName: String,
-    val params: Set<Param>,
+    val factoryMethod: String,
+    val factoryParams: Set<Param>,
     val isPublic: Boolean
 ) {
     data class Param(
