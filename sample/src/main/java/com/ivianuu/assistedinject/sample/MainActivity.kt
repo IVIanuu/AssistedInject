@@ -24,11 +24,14 @@ class KeyViewModelProviderFactory @Inject constructor(
 class MainActivity : AppCompatActivity() {
 
     @Inject lateinit var factory: KeyViewModelProviderFactory
+    @Inject lateinit var loginViewModelFactory: LoginViewModelFactory
 
     override fun onCreate(savedInstanceState: Bundle?) {
         (application as App).appComponent.inject(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        loginViewModelFactory.create(this)
 
         val viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 

@@ -9,11 +9,11 @@ import com.squareup.javapoet.TypeName
 data class AssistedModuleDescriptor(
     val packageName: String,
     val moduleName: ClassName,
-    val factories: List<AssistedFactory>,
+    val factories: List<AssistedFactoryDescriptor>,
     val isPublic: Boolean
 )
 
-data class AssistedFactory(
+data class AssistedFactoryDescriptor(
     val target: ClassName,
     val factory: ClassName,
     val superType: TypeName

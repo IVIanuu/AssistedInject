@@ -21,6 +21,7 @@ import android.os.Bundle
 import android.os.Parcelable
 import androidx.lifecycle.ViewModel
 import com.ivianuu.assistedinject.Assisted
+import com.ivianuu.assistedinject.AssistedFactory
 import com.ivianuu.assistedinject.AssistedInject
 import dagger.Binds
 import dagger.MapKey
@@ -49,6 +50,7 @@ interface KeyViewModelFactory<K : Parcelable> {
     fun create(key: K, context: Context): ViewModel
 }
 
+@AssistedFactory(MainViewModel.Factory::class)
 class MainViewModel @AssistedInject constructor(
     private val myDep1: MyDep1,
     @Assisted context: Context,
@@ -56,18 +58,21 @@ class MainViewModel @AssistedInject constructor(
     @AppContext appCo: Context,
     private val myDep2: MyDep2
 ) : ViewModel() {
-
-    @AssistedInject.Factory
     interface Factory : KeyViewModelFactory<Bundle>
 }
 
+class LoginViewModel @AssistedInject constructor(
+    private val dep1: MyDep1,
+    private val dep2: MyDep2,
+    @Assisted context: Context
+)
+
+@AssistedFactory(HomeViewModel.Factory::class)
 class HomeViewModel @AssistedInject constructor(
     @Assisted private val key: Bundle,
     private val myDep1: MyDep1,
     private val myDep2: MyDep2,
     @Assisted private val context: Context
 ) : ViewModel() {
-
-    @AssistedInject.Factory
     interface Factory : KeyViewModelFactory<Bundle>
 }
