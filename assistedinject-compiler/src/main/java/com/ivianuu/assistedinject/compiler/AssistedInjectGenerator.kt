@@ -1,7 +1,7 @@
 package com.ivianuu.assistedinject.compiler
 
+import com.ivianuu.processingx.asJavaClassName
 import com.squareup.javapoet.AnnotationSpec
-import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.JavaFile
@@ -46,7 +46,10 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
                     .asSequence()
                     .map {
                         ParameterSpec.builder(
-                            ParameterizedTypeName.get(ClassName.get(Provider::class.java), it.type),
+                            ParameterizedTypeName.get(
+                                Provider::class.asJavaClassName(),
+                                it.type
+                            ),
                             it.name
                         )
                             .addAnnotation(NotNull::class.java)
@@ -74,7 +77,7 @@ class AssistedInjectGenerator(private val descriptor: AssistedInjectDescriptor) 
             .map {
                 FieldSpec.builder(
                     ParameterizedTypeName.get(
-                        ClassName.get(Provider::class.java),
+                        Provider::class.asJavaClassName(),
                         it.type
                     ), it.name
                 )

@@ -17,11 +17,11 @@
 package com.ivianuu.assistedinject.compiler
 
 import com.google.auto.service.AutoService
-import com.ivianuu.assistedinject.compiler.simple.SimpleProcessor
+import com.ivianuu.processingx.StepProcessor
 import javax.annotation.processing.Processor
 
 @AutoService(Processor::class)
-class AssistedInjectProcessor : SimpleProcessor() {
+class AssistedInjectProcessor : StepProcessor() {
 
     override fun initSteps() = setOf(
         AssistedInjectProcessingStep(),

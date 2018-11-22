@@ -1,13 +1,19 @@
 package com.ivianuu.assistedinject.compiler
 
-import com.google.auto.common.AnnotationMirrors.getAnnotatedAnnotations
-import com.google.auto.common.AnnotationMirrors.getAnnotationValue
-import com.google.auto.common.MoreElements.getAnnotationMirror
 import com.google.auto.common.MoreElements.getLocalAndInheritedMethods
 import com.google.common.collect.SetMultimap
 import com.ivianuu.assistedinject.AssistedFactory
 import com.ivianuu.assistedinject.AssistedInject
-import com.ivianuu.assistedinject.compiler.simple.BaseProcessingStep
+import com.ivianuu.processingx.asJavaClassName
+import com.ivianuu.processingx.asJavaTypeName
+import com.ivianuu.processingx.elementUtils
+import com.ivianuu.processingx.filer
+import com.ivianuu.processingx.getAnnotatedAnnotations
+import com.ivianuu.processingx.getAnnotationMirrorOrNull
+import com.ivianuu.processingx.getAsTypeOrNull
+import com.ivianuu.processingx.getPackage
+import com.ivianuu.processingx.messager
+import com.ivianuu.processingx.typeUtils
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 import me.eugeniomarletti.kotlin.metadata.KotlinClassMetadata
@@ -19,7 +25,6 @@ import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.ExecutableType
-import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
 
 class AssistedInjectProcessingStep : BaseProcessingStep() {
@@ -45,26 +50,21 @@ class AssistedInjectProcessingStep : BaseProcessingStep() {
         val params = element.parameters
             .map {
                 Param(
-                    TypeName.get(it.asType()),
+                    it.asType().asJavaTypeName(),
                     it.simpleName.toString(),
                     it.isAssisted(),
-                    getAnnotatedAnnotations(it, Qualifier::class.java).toList()
+                    it.getAnnotatedAnnotations<Qualifier>()
                 )
             }
             .toSet()
 
         val assistedParams = params.filter { it.assisted }
 
-        val factoryAnnotation = getAnnotationMirror(type, AssistedFactory::class.java).orNull()
-
-        val factoryTypeMirror = if (factoryAnnotation != null) {
-            getAnnotationValue(factoryAnnotation, "clazz").value as TypeMirror
-        } else {
-            null
-        }
+        val factoryAnnotation = type.getAnnotationMirrorOrNull<AssistedFactory>()
+        val factoryType = factoryAnnotation?.getAsTypeOrNull("clazz")
 
         val factory =
-            factoryTypeMirror?.let { elementUtils.getTypeElement(it.toString()) }
+            factoryType?.let { elementUtils.getTypeElement(it.toString()) }
 
         val factoryDescriptor = if (factory != null) {
             val factoryMethods = getLocalAndInheritedMethods(
@@ -116,7 +116,7 @@ class AssistedInjectProcessingStep : BaseProcessingStep() {
                         TypeName.get(type),
                         ktName ?: element.simpleName.toString(),
                         true,
-                        emptyList()
+                        emptySet()
                     )
                 }
 
@@ -132,7 +132,7 @@ class AssistedInjectProcessingStep : BaseProcessingStep() {
             }
 
             FactoryDescriptor(
-                ClassName.bestGuess(factoryTypeMirror.toString()),
+                factoryType.asJavaTypeName() as ClassName,
                 factoryMethod.simpleName.toString(), factoryParams.toSet()
             )
         } else {
@@ -140,9 +140,9 @@ class AssistedInjectProcessingStep : BaseProcessingStep() {
             val methodName = "create"
 
             val autoFactoryDescriptor = AutoFactoryDescriptor(
-                ClassName.get(type).packageName(),
+                type.getPackage().qualifiedName.toString(),
                 factoryName,
-                ClassName.get(type),
+                type.asJavaClassName(),
                 methodName,
                 assistedParams.toSet(),
                 type.modifiers.contains(Modifier.PUBLIC)
@@ -155,8 +155,8 @@ class AssistedInjectProcessingStep : BaseProcessingStep() {
         }
 
         return AssistedInjectDescriptor(
-            ClassName.get(type).packageName(),
-            ClassName.get(type),
+            type.getPackage().qualifiedName.toString(),
+            type.asJavaClassName(),
             params,
             type.className("AssistedFactory"),
             factoryDescriptor.factoryName,

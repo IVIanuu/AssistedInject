@@ -1,17 +1,20 @@
 package com.ivianuu.assistedinject.compiler
 
-import com.google.auto.common.AnnotationMirrors.getAnnotationValue
-import com.google.auto.common.MoreElements.getAnnotationMirror
 import com.google.common.collect.SetMultimap
+import com.ivianuu.assistedinject.AssistedFactory
 import com.ivianuu.assistedinject.AssistedInject
 import com.ivianuu.assistedinject.AssistedModule
-import com.ivianuu.assistedinject.compiler.simple.BaseProcessingStep
-import com.squareup.javapoet.ClassName
+import com.ivianuu.processingx.asJavaClassName
+import com.ivianuu.processingx.asJavaTypeName
+import com.ivianuu.processingx.filer
+import com.ivianuu.processingx.getAnnotationMirrorOrNull
+import com.ivianuu.processingx.getAsType
+import com.ivianuu.processingx.getPackage
+import com.ivianuu.processingx.messager
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
 
 /**
@@ -48,23 +51,21 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
             .filterIsInstance<ExecutableElement>()
             .map { element ->
                 val target = (element.enclosingElement as TypeElement)
-                val assistedFactoryAnnotation = getAnnotationMirror(
-                    target,
-                    com.ivianuu.assistedinject.AssistedFactory::class.java
-                ).orNull()
+
+                val assistedFactoryAnnotation = target.getAnnotationMirrorOrNull<AssistedFactory>()
 
                 if (assistedFactoryAnnotation != null) {
                     val factory =
-                        getAnnotationValue(assistedFactoryAnnotation, "clazz").value as TypeMirror
+                        assistedFactoryAnnotation.getAsType("clazz")
 
                     AssistedFactoryDescriptor(
-                        ClassName.get(target),
+                        target.asJavaClassName(),
                         target.className("AssistedFactory"),
-                        ClassName.bestGuess(factory.toString())
+                        factory.asJavaTypeName()
                     )
                 } else {
                     AssistedFactoryDescriptor(
-                        ClassName.get(target),
+                        target.asJavaClassName(),
                         target.className("AssistedFactory"),
                         target.className("Factory")
                     )
@@ -77,7 +78,7 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
 
             if (assistedModule != null) {
                 val descriptor = AssistedModuleDescriptor(
-                    assistedModule.packageName(),
+                    assistedModule.getPackage().qualifiedName.toString(),
                     assistedModule.className("_AssistedModule"),
                     factories,
                     isPublic

@@ -7,5 +7,5 @@ data class Param(
     val type: TypeName,
     val name: String,
     val assisted: Boolean,
-    val qualifiers: List<AnnotationMirror>
+    val qualifiers: Set<AnnotationMirror>
 )
