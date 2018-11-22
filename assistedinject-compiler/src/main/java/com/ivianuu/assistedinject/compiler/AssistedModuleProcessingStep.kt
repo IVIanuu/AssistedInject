@@ -129,7 +129,8 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
         if (!includesEntries.map { it.toString() }.contains(generatedModuleName!!.toString())) {
             messager.printMessage(
                 Diagnostic.Kind.ERROR,
-                "@AssistedModule annotated modules must include the generated assisted module"
+                "@AssistedModule annotated modules must include the generated assisted module",
+                assistedModule
             )
         }
     }
