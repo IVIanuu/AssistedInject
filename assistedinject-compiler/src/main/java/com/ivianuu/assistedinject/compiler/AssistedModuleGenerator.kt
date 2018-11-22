@@ -7,9 +7,6 @@ import dagger.Binds
 import dagger.Module
 import javax.lang.model.element.Modifier
 
-/**
- * @author Manuel Wrage (IVIanuu)
- */
 class AssistedModuleGenerator(private val descriptor: AssistedModuleDescriptor) {
 
     fun generate(): JavaFile {

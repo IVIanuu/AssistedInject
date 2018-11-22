@@ -26,6 +26,8 @@ class AssistedInjectProcessingStep : BaseProcessingStep() {
 
     override fun annotations() = setOf(AssistedInject::class.java)
 
+    override fun validate(annotationClass: Class<out Annotation>, element: Element) = true
+
     override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
         elementsByAnnotation[AssistedInject::class.java]
             .filterIsInstance<ExecutableElement>()

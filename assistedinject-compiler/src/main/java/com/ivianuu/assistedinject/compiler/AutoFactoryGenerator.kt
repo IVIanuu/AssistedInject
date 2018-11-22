@@ -5,9 +5,6 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import javax.lang.model.element.Modifier
 
-/**
- * @author Manuel Wrage (IVIanuu)
- */
 class AutoFactoryGenerator(private val descriptor: AutoFactoryDescriptor) {
 
     fun generate(): JavaFile {

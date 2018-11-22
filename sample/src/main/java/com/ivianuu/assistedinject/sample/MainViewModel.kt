@@ -44,6 +44,7 @@ abstract class ViewModelFactoryModule {
     @IntoMap
     @ViewModelKey(HomeViewModel::class)
     abstract fun bindHomeViewModelFactory(factory: HomeViewModel.Factory): KeyViewModelFactory<*>
+
 }
 
 interface KeyViewModelFactory<K : Parcelable> {

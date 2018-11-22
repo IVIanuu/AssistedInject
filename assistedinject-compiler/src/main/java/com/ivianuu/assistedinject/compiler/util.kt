@@ -18,7 +18,7 @@ fun VariableElement.isAssisted() = isAnnotationPresent(this, Assisted::class.jav
         || getFieldFromType()
     ?.let { f -> isAnnotationPresent(f, Assisted::class.java) } ?: false
 
-fun TypeElement.className(suffix: String) =
+fun TypeElement.className(suffix: String): ClassName =
     ClassName.get(packageName(), baseClassName() + suffix)
 
 private fun TypeElement.baseClassName() = qualifiedName.toString().substring(

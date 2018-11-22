@@ -20,9 +20,6 @@ import com.google.auto.service.AutoService
 import com.ivianuu.assistedinject.compiler.simple.SimpleProcessor
 import javax.annotation.processing.Processor
 
-/**
- * Assisted inject processor
- */
 @AutoService(Processor::class)
 class AssistedInjectProcessor : SimpleProcessor() {
 
