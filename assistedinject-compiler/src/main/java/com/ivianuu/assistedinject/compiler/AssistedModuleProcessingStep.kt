@@ -1,13 +1,12 @@
 package com.ivianuu.assistedinject.compiler
 
 import com.google.auto.common.AnnotationMirrors.getAnnotationValue
-import com.google.auto.common.BasicAnnotationProcessor
 import com.google.auto.common.MoreElements.getAnnotationMirror
 import com.google.common.collect.SetMultimap
 import com.ivianuu.assistedinject.AssistedInject
 import com.ivianuu.assistedinject.AssistedModule
+import com.ivianuu.assistedinject.compiler.simple.BaseProcessingStep
 import com.squareup.javapoet.ClassName
-import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
@@ -18,29 +17,28 @@ import javax.tools.Diagnostic
 /**
  * @author Manuel Wrage (IVIanuu)
  */
-class AssistedModuleProcessingStep(private val processingEnv: ProcessingEnvironment) :
-    BasicAnnotationProcessor.ProcessingStep {
+class AssistedModuleProcessingStep : BaseProcessingStep() {
 
-    private var assistedModule: ClassName? = null
+    private var assistedModule: TypeElement? = null
     private val factories = mutableListOf<AssistedFactoryDescriptor>()
     private var isPublic = false
 
     override fun annotations() =
-        mutableSetOf(AssistedModule::class.java, AssistedInject::class.java)
+        setOf(AssistedModule::class.java, AssistedInject::class.java)
 
-    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): MutableSet<out Element> {
+    override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
         elementsByAnnotation[AssistedModule::class.java]
             .filterIsInstance<TypeElement>()
             .forEach {
                 val currentAssistedModule = assistedModule
                 if (currentAssistedModule != null) {
-                    processingEnv.messager.printMessage(
+                    messager.printMessage(
                         Diagnostic.Kind.ERROR,
                         "only one module should be annotated with @AssistedModule"
                     )
                 }
 
-                assistedModule = ClassName.get(it)
+                assistedModule = it
                 isPublic = it.modifiers.contains(Modifier.PUBLIC)
             }
 
@@ -59,14 +57,14 @@ class AssistedModuleProcessingStep(private val processingEnv: ProcessingEnvironm
 
                     AssistedFactoryDescriptor(
                         ClassName.get(target),
-                        ClassName.bestGuess(target.asType().toString() + "_AssistedFactory"),
+                        target.className("AssistedFactory"),
                         ClassName.bestGuess(factory.toString())
                     )
                 } else {
                     AssistedFactoryDescriptor(
                         ClassName.get(target),
-                        ClassName.bestGuess(target.asType().toString() + "_AssistedFactory"),
-                        ClassName.bestGuess(target.asType().toString() + "Factory")
+                        target.className("AssistedFactory"),
+                        target.className("Factory")
                     )
                 }
             }
@@ -79,23 +77,23 @@ class AssistedModuleProcessingStep(private val processingEnv: ProcessingEnvironm
             if (assistedModule != null) {
                 val descriptor = AssistedModuleDescriptor(
                     assistedModule.packageName(),
-                    ClassName.bestGuess("${assistedModule.simpleName()}_AssistedModule"),
+                    assistedModule.className("_AssistedModule"),
                     factories,
                     isPublic
                 )
 
                 AssistedModuleGenerator(descriptor)
                     .generate()
-                    .writeTo(processingEnv.filer)
+                    .writeTo(filer)
             } else {
-                processingEnv.messager.printMessage(
+                messager.printMessage(
                     Diagnostic.Kind.ERROR,
                     "missing @AssistedModule annotated class"
                 )
             }
         }
 
-        return mutableSetOf()
+        return emptySet()
     }
 
 }

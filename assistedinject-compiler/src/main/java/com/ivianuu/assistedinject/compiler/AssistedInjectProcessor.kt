@@ -16,24 +16,19 @@
 
 package com.ivianuu.assistedinject.compiler
 
-import com.google.auto.common.BasicAnnotationProcessor
 import com.google.auto.service.AutoService
+import com.ivianuu.assistedinject.compiler.simple.SimpleProcessor
 import javax.annotation.processing.Processor
 
 /**
  * Assisted inject processor
  */
 @AutoService(Processor::class)
-class AssistedInjectProcessor : BasicAnnotationProcessor() {
+class AssistedInjectProcessor : SimpleProcessor() {
 
-    private val assistedModuleStep by lazy {
-        AssistedModuleProcessingStep(processingEnv)
-    }
-
-    override fun initSteps() =
-        mutableSetOf(
-            AssistedInjectProcessingStep(processingEnv),
-            assistedModuleStep
-        )
+    override fun initSteps() = setOf(
+        AssistedInjectProcessingStep(),
+        AssistedModuleProcessingStep()
+    )
 
 }
