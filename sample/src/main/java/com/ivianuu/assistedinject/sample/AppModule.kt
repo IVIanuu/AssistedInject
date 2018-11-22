@@ -35,7 +35,9 @@ object AppModule {
     @AppContext
     @Provides
     fun provideContext(app: App): Context = app
+
 }
 
+@Module(includes = [AssistedModule_AssistedModule::class])
 @AssistedModule
 class AssistedModule

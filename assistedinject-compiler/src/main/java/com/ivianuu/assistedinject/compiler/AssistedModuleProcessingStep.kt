@@ -6,11 +6,16 @@ import com.ivianuu.assistedinject.AssistedInject
 import com.ivianuu.assistedinject.AssistedModule
 import com.ivianuu.processingx.asJavaClassName
 import com.ivianuu.processingx.asJavaTypeName
+import com.ivianuu.processingx.elementUtils
 import com.ivianuu.processingx.filer
+import com.ivianuu.processingx.getAnnotationMirror
 import com.ivianuu.processingx.getAnnotationMirrorOrNull
 import com.ivianuu.processingx.getAsType
+import com.ivianuu.processingx.getAsTypeList
 import com.ivianuu.processingx.getPackage
 import com.ivianuu.processingx.messager
+import com.squareup.javapoet.ClassName
+import dagger.Module
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
@@ -22,9 +27,10 @@ import javax.tools.Diagnostic
  */
 class AssistedModuleProcessingStep : BaseProcessingStep() {
 
-    private var assistedModule: TypeElement? = null
+    private var moduleGenerated = false
+    private var assistedModuleName: ClassName? = null
+    private var generatedModuleName: ClassName? = null
     private val factories = mutableListOf<AssistedFactoryDescriptor>()
-    private var isPublic = false
 
     override fun annotations() =
         setOf(AssistedModule::class.java, AssistedInject::class.java)
@@ -32,21 +38,6 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
     override fun validate(annotationClass: Class<out Annotation>, element: Element) = true
 
     override fun process(elementsByAnnotation: SetMultimap<Class<out Annotation>, Element>): Set<Element> {
-        elementsByAnnotation[AssistedModule::class.java]
-            .filterIsInstance<TypeElement>()
-            .forEach {
-                val currentAssistedModule = assistedModule
-                if (currentAssistedModule != null) {
-                    messager.printMessage(
-                        Diagnostic.Kind.ERROR,
-                        "only one module should be annotated with @AssistedModule"
-                    )
-                }
-
-                assistedModule = it
-                isPublic = it.modifiers.contains(Modifier.PUBLIC)
-            }
-
         elementsByAnnotation[AssistedInject::class.java]
             .filterIsInstance<ExecutableElement>()
             .map { element ->
@@ -73,13 +64,36 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
             }
             .forEach { factories.add(it) }
 
-        if (factories.isNotEmpty()) {
-            val assistedModule = assistedModule
+        elementsByAnnotation[AssistedModule::class.java]
+            .filterIsInstance<TypeElement>()
+            .forEach {
+                if (moduleGenerated) {
+                    messager.printMessage(
+                        Diagnostic.Kind.ERROR,
+                        "only one module should be annotated with @AssistedModule"
+                    )
+                    return@forEach
+                }
 
-            if (assistedModule != null) {
+                assistedModuleName = it.asJavaClassName()
+
+                val isPublic = it.modifiers.contains(Modifier.PUBLIC)
+                val moduleAnnotation = it.getAnnotationMirrorOrNull<Module>()
+
+                if (moduleAnnotation == null) {
+                    messager.printMessage(
+                        Diagnostic.Kind.ERROR,
+                        "@AssistedModules must also have @Module annotation"
+                    )
+                    return@forEach
+                }
+
+                val assistedModuleName = it.className("_AssistedModule")
+                    .also { generatedModuleName = it }
+
                 val descriptor = AssistedModuleDescriptor(
-                    assistedModule.getPackage().qualifiedName.toString(),
-                    assistedModule.className("_AssistedModule"),
+                    it.getPackage().qualifiedName.toString(),
+                    assistedModuleName,
                     factories,
                     isPublic
                 )
@@ -87,15 +101,37 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
                 AssistedModuleGenerator(descriptor)
                     .generate()
                     .writeTo(filer)
-            } else {
-                messager.printMessage(
-                    Diagnostic.Kind.ERROR,
-                    "missing @AssistedModule annotated class"
-                )
+
+                moduleGenerated = true
             }
-        }
 
         return emptySet()
+    }
+
+    override fun postRound(processingOver: Boolean) {
+        if (!processingOver) return
+
+        if (!moduleGenerated && factories.isNotEmpty()) {
+            messager.printMessage(
+                Diagnostic.Kind.ERROR,
+                "missing @AssistedModule annotated class"
+            )
+
+            return
+        }
+
+        val assistedModule = elementUtils.getTypeElement(assistedModuleName!!.toString())
+
+        val moduleAnnotation = assistedModule.getAnnotationMirror<Module>()
+
+        val includesEntries = moduleAnnotation.getAsTypeList("includes")
+
+        if (!includesEntries.map { it.toString() }.contains(generatedModuleName!!.toString())) {
+            messager.printMessage(
+                Diagnostic.Kind.ERROR,
+                "@AssistedModule annotated modules must include the generated assisted module"
+            )
+        }
     }
 
 }
