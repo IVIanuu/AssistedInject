@@ -19,7 +19,6 @@ interface ProcessingStep {
     ): Set<Element>
 
     fun postRound(processingOver: Boolean) {
-
     }
 
 }

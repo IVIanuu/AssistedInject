@@ -70,30 +70,30 @@ class AssistedModuleProcessingStep : BaseProcessingStep() {
             }
             .forEach { factories.add(it) }
 
-        // no op
-        if (factories.isNotEmpty()) {
-            val assistedModule = assistedModule
-
-            if (assistedModule != null) {
-                val descriptor = AssistedModuleDescriptor(
-                    assistedModule.packageName(),
-                    assistedModule.className("_AssistedModule"),
-                    factories,
-                    isPublic
-                )
-
-                AssistedModuleGenerator(descriptor)
-                    .generate()
-                    .writeTo(filer)
-            } else {
-                messager.printMessage(
-                    Diagnostic.Kind.ERROR,
-                    "missing @AssistedModule annotated class"
-                )
-            }
-        }
-
         return emptySet()
     }
 
+    override fun postRound(processingOver: Boolean) {
+        if (!processingOver || factories.isEmpty()) return
+
+        val assistedModule = assistedModule
+
+        if (assistedModule != null) {
+            val descriptor = AssistedModuleDescriptor(
+                assistedModule.packageName(),
+                assistedModule.className("_AssistedModule"),
+                factories,
+                isPublic
+            )
+
+            AssistedModuleGenerator(descriptor)
+                .generate()
+                .writeTo(filer)
+        } else {
+            messager.printMessage(
+                Diagnostic.Kind.ERROR,
+                "missing @AssistedModule annotated class"
+            )
+        }
+    }
 }

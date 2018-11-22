@@ -84,15 +84,12 @@ abstract class SimpleProcessor : AbstractProcessor() {
         missingElements: Map<String, Element?>,
         missingElementNames: Collection<ElementName>
     ) {
-        var missingElements = missingElements
-        if (!missingElementNames.isEmpty()) {
-            val allMissingElements = mutableMapOf<String, Element?>()
-            allMissingElements.putAll(missingElements)
-            missingElementNames
-                .filterNot { missingElements.containsKey(it.name) }
-                .forEach { allMissingElements.put(it.name, it.getElement(elements)) }
-            missingElements = allMissingElements
-        }
+        val allMissingElements = mutableMapOf<String, Element?>()
+        allMissingElements.putAll(missingElements)
+
+        missingElementNames
+            .filterNot { missingElements.containsKey(it.name) }
+            .forEach { allMissingElements[it.name] = it.getElement(elements) }
 
         missingElements.entries
             .forEach { (key, missingElement) ->

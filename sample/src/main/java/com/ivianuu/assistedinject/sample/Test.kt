@@ -2,8 +2,8 @@ package com.ivianuu.assistedinject.sample
 
 import com.ivianuu.assistedinject.Assisted
 import com.ivianuu.assistedinject.AssistedInject
+import javax.inject.Inject
 
-/*
 class MyService @Inject constructor(
     private val controllerFactory: MyControllerFactory
 ) {
@@ -18,7 +18,7 @@ class MyController @AssistedInject constructor(
 class MyHelper @AssistedInject constructor(
     @Assisted private val controller: MyController,
     private val app: App
-)*/
+)
 
 class ParentType {
 
